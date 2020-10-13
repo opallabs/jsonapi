@@ -225,7 +225,7 @@ defmodule JSONAPI.QueryParser do
     end
   end
 
-  defp check_include_validity!(_key, config) do
+  defp check_include_validity!(_key, _config) do
     # all includes are allowed if none are specified in input config
   end
 
