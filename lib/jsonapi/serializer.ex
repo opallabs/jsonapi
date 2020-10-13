@@ -89,15 +89,16 @@ defmodule JSONAPI.Serializer do
      || data_is_not_assoc?(property)
   end
 
-  @spec build_relationships(Plug.Conn.t(), tuple(), tuple(), tuple(), list()) :: tuple()
+  # @spec build_relationships(Plug.Conn.t(), tuple(), tuple(), tuple(), list()) :: tuple()
   def build_relationships(
         conn,
         {view, data, query_includes, valid_includes},
-        {key, include_view},
+        {key, {key_rewrite, include_view}},
         acc,
         options
       ) do
-    rel_view =
+
+      rel_view =
       case include_view do
         {view, :include} -> view
         view -> view
@@ -106,7 +107,7 @@ defmodule JSONAPI.Serializer do
     rel_data = Map.get(data, key)
 
     # Build the relationship url
-    rel_key = transform_fields(key)
+    rel_key = transform_fields(key_rewrite)
     rel_url = view.url_for_rel(data, rel_key, conn)
 
     # Build the relationship
@@ -139,6 +140,24 @@ defmodule JSONAPI.Serializer do
     else
       {nil, acc}
     end
+  end
+
+  # @spec build_relationships(Plug.Conn.t(), tuple(), tuple(), tuple(), list()) :: tuple()
+  def build_relationships(
+        conn,
+        {view, data, query_includes, valid_includes},
+        {key, include_view},
+        acc,
+        options
+      ) do
+
+      build_relationships(
+        conn,
+        {view, data, query_includes, valid_includes},
+        {key, {key, include_view}},
+        acc,
+        options
+      )
   end
 
   defp include_view(valid_includes, key) when is_list(valid_includes) do
