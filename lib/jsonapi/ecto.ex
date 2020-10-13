@@ -15,4 +15,12 @@ defmodule JSONAPI.Ecto do
       _ -> true
     end
   end
+
+  def data_is_not_assoc?(value) do
+    case value do
+      %{__struct__: Ecto.Association.NotLoaded} -> false
+      %{__struct__: Ecto.Association} -> false
+      _ -> true
+    end
+  end
 end

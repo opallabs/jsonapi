@@ -3,7 +3,7 @@ defmodule JSONAPI.Serializer do
   Serialize a map of data into a properly formatted JSON API response object
   """
 
-  import JSONAPI.Ecto, only: [assoc_loaded?: 1]
+  import JSONAPI.Ecto, only: [assoc_loaded?: 1, data_is_not_assoc?: 1]
 
   alias JSONAPI.{Config, Utils}
   alias Utils.String, as: JString
@@ -80,8 +80,13 @@ defmodule JSONAPI.Serializer do
   @spec encode_relationships(Plug.Conn.t(), serialized_doc(), tuple(), list()) :: tuple()
   def encode_relationships(conn, doc, {view, data, _, _} = view_info, options) do
     view.relationships()
-    |> Enum.filter(&data_loaded?(Map.get(data, elem(&1, 0))))
+    |> Enum.filter(&loaded_assoc_or_value?(Map.get(data, elem(&1, 0))))
     |> Enum.map_reduce(doc, &build_relationships(conn, view_info, &1, &2, options))
+  end
+
+  defp loaded_assoc_or_value?(property) do
+    data_loaded?(property)
+     || data_is_not_assoc?(property)
   end
 
   @spec build_relationships(Plug.Conn.t(), tuple(), tuple(), tuple(), list()) :: tuple()
