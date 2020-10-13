@@ -27,8 +27,13 @@ defmodule JSONAPI.QueryParser do
   plug JSONAPI.QueryParser,
     filter: ~w(title),
     sort: ~w(created_at title),
+    include: ~w(others) # optionally specify a list of allowed includes.
     view: MyView
   ```
+
+  If you specify which includes are allowed, any include type not in the list
+  will produce an error. If you omit the `include` list then all relationships
+  specified by the given resource will be allowed.
 
   If your controller's index function receives a query with params inside those
   bounds it will build a `JSONAPI.Config` that has all the validated and parsed
@@ -194,6 +199,7 @@ defmodule JSONAPI.QueryParser do
     includes = String.split(str, ",")
 
     Enum.reduce(includes, [], fn inc, acc ->
+      check_include_validity!(inc, config)
       if inc =~ ~r/\w+\.\w+/ do
         acc ++ handle_nested_include(inc, valid_includes, config)
       else
@@ -211,6 +217,16 @@ defmodule JSONAPI.QueryParser do
         end
       end
     end)
+  end
+
+  defp check_include_validity!(key, %Config{include: allowed_includes, view: view}) when length(allowed_includes) > 0  do
+    unless key in allowed_includes do
+      raise_invalid_include_query(key, view.type())
+    end
+  end
+
+  defp check_include_validity!(_key, config) do
+    # all includes are allowed if none are specified in input config
   end
 
   @spec handle_nested_include(key :: String.t(), valid_include :: list(), config :: Config.t()) ::
