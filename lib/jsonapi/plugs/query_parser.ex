@@ -31,7 +31,7 @@ defmodule JSONAPI.QueryParser do
     view: MyView
   ```
 
-  If you specify which includes are allowed, any include type not in the list
+  If you specify which includes are allowed, any include name not in the list
   will produce an error. If you omit the `include` list then all relationships
   specified by the given resource will be allowed.
 
