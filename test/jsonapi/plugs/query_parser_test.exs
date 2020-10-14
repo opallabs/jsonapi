@@ -109,7 +109,7 @@ defmodule JSONAPI.QueryParserTest do
   end
 
   test "parse_include/2 errors with limited allowed includes" do
-    config = struct(Config, view: MyView, include: ~w(author comments))
+    config = struct(Config, view: MyView, opts: [include: ~w(author comments)])
 
     assert_raise InvalidQuery, "invalid include, best_friends for type mytype", fn ->
       parse_include(config, "best_friends,author")

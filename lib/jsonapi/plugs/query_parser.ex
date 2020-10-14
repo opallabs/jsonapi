@@ -219,13 +219,19 @@ defmodule JSONAPI.QueryParser do
     end)
   end
 
-  defp check_include_validity!(key, %Config{include: allowed_includes, view: view}) when length(allowed_includes) > 0  do
+  defp check_include_validity!(key, %Config{opts: opts, view: view}) do
+    if opts do
+      check_include_validity!(key, Keyword.get(opts, :include), view)
+    end
+  end
+
+  defp check_include_validity!(key, allowed_includes, view) when is_list(allowed_includes) do
     unless key in allowed_includes do
       raise_invalid_include_query(key, view.type())
     end
   end
 
-  defp check_include_validity!(_key, _config) do
+  defp check_include_validity!(_key, nil, _view) do
     # all includes are allowed if none are specified in input config
   end
 
