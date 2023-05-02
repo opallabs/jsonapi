@@ -109,13 +109,15 @@ defmodule JSONAPI.QueryParserTest do
   end
 
   test "parse_include/2 errors with limited allowed includes" do
-    config = struct(Config, view: MyView, opts: [include: ~w(author comments)])
+    config = struct(Config, view: MyView, opts: [include: ~w(author comments comments.user)])
 
     assert_raise InvalidQuery, "invalid include, best_friends for type mytype", fn ->
       parse_include(config, "best_friends,author")
     end
 
     assert parse_include(config, "author,comments").include == [:author, :comments]
+
+    assert parse_include(config, "author,comments.user").include == [:author, {:comments, :user}]
   end
 
   test "parse_fields/2 turns a fields map into a map of validated fields" do

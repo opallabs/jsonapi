@@ -212,6 +212,7 @@ defmodule JSONAPI.QueryParser do
 
     Enum.reduce(includes, [], fn inc, acc ->
       check_include_validity!(inc, config)
+
       if inc =~ ~r/\w+\.\w+/ do
         acc ++ handle_nested_include(inc, valid_includes, config)
       else
