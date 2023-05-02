@@ -1,5 +1,11 @@
 # JSONAPI Elixir
 
+[![Build](https://github.com/beam-community/jsonapi/actions/workflows/ci.yml/badge.svg)](https://github.com/beam-community/jsonapi/actions/workflows/ci.yml)
+[![Hex.pm version](https://img.shields.io/hexpm/v/jsonapi.svg)](https://hex.pm/packages/jsonapi)
+[![Hex.pm downloads](https://img.shields.io/hexpm/dt/jsonapi.svg)](https://hex.pm/packages/jsonapi)
+[![Hex.pm weekly downloads](https://img.shields.io/hexpm/dw/jsonapi.svg)](https://hex.pm/packages/jsonapi)
+[![Hex.pm daily downloads](https://img.shields.io/hexpm/dd/jsonapi.svg)](https://hex.pm/packages/jsonapi)
+
 A project that will render your data models into [JSONAPI Documents](http://jsonapi.org/format) and parse/verify JSONAPI query strings.
 
 ## JSONAPI Support
@@ -20,8 +26,8 @@ of the JSON:API spec.
 
 ## Documentation
 
-* [Full docs here](https://hexdocs.pm/jsonapi)
-* [JSON API Spec (v1.1)](https://jsonapi.org/format/1.1/)
+- [Full docs here](https://hexdocs.pm/jsonapi)
+- [JSON API Spec (v1.1)](https://jsonapi.org/format/1.1/)
 
 ## Badges
 
@@ -31,7 +37,7 @@ of the JSON:API spec.
 
 ### Installation
 
-Add the following line to your `mix.deps` file with the desired verison to install `jsonapi`.
+Add the following line to your `mix.deps` file with the desired version to install `jsonapi`.
 
 ```elixir
 defp deps do [
@@ -78,6 +84,25 @@ or `"index.json"` normally.
 If you'd like to use this without Phoenix simply use the `JSONAPI.View` and call
 `JSONAPI.Serializer.serialize(MyApp.PostView, data, conn, meta)`.
 
+## Renaming relationships
+If a relationship has a different name in the backend than you would like it to in your API,
+you can rewrite its name in the `JSONAPI.View`. You pair the view with the name of the relationship
+used in the data (e.g. Ecto schema) to achieve this. Note that you can use a triple instead 
+of a pair to add the instruction to always include the relation if desired.
+
+```elixir
+defmodule MyApp.PostView do
+  use JSONAPI.View, type: "posts"
+
+  def relationships do
+    # The `author` will be exposed as `creator` and the `comments` will be 
+    # exposed as `critiques` (for some reason).
+    [creator: {:author, MyApp.UserView, :include},
+     critiques: {:comments, MyApp.CommentView}]
+  end
+end
+```
+
 ## Parsing and validating a JSONAPI Request
 
 In your controller you may add
@@ -107,11 +132,11 @@ Please see its documentation for details.
 
 JSONAPI has recommended in the past the use of dashes (`-`) in place of underscore (`_`) as a
 word separator for document member keys. However, as of [JSON API Spec (v1.1)](https://jsonapi.org/format/1.1/), it is now recommended that member names
-are camelCased. This library provides various configuration options for maximum flexibility including serializing outgoing parameters and deserializing incoming paramenters.
+are camelCased. This library provides various configuration options for maximum flexibility including serializing outgoing parameters and deserializing incoming parameters.
 
 Transforming fields requires two steps:
 
-1. camelCase *outgoing* fields requires you to set the `:field_transformation`
+1. camelCase _outgoing_ fields requires you to set the `:field_transformation`
    configuration option. Example:
 
    ```elixir
@@ -119,7 +144,7 @@ Transforming fields requires two steps:
      field_transformation: :camelize # or dasherize
    ```
 
-2. Underscoring *incoming* params (both query and body) requires you add the
+2. Underscoring _incoming_ params (both query and body) requires you add the
    `JSONAPI.UnderscoreParameters` Plug to your API's pipeline. This makes it easy to
    work with changeset data.
 
@@ -134,10 +159,11 @@ Transforming fields requires two steps:
    to work with when creating or updating resources. This plug works by taking the resource
    object format and flattening it into an easier to manipulate Map.
 
-   Note that the deserializer expects the same casing for your *outgoing* params as your
-   *incoming* params.
+   Note that the deserializer expects the same casing for your _outgoing_ params as your
+   _incoming_ params.
 
    Your pipeline in a Phoenix app might look something like this:
+
    ```elixir
    pipeline :api do
      plug JSONAPI.EnsureSpec
@@ -194,7 +220,6 @@ config :jsonapi,
   setting the configuration above to `true`. Defaults to `false`.
 - **json_library**. Defaults to [Jason](https://hex.pm/packages/jason).
 - **paginator**. Module implementing pagination links generation. Defaults to `nil`.
-
 
 ## Pagination
 

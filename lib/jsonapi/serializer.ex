@@ -3,14 +3,12 @@ defmodule JSONAPI.Serializer do
   Serialize a map of data into a properly formatted JSON API response object
   """
 
-  import JSONAPI.Ecto, only: [assoc_loaded?: 1]
-
-  alias JSONAPI.{Config, Utils}
-  alias Utils.String, as: JString
+  alias JSONAPI.{Config, Utils, View}
+  alias Plug.Conn
 
   require Logger
 
-  @typep serialized_doc :: map()
+  @type document :: map()
 
   @doc """
   Takes a view, data and a optional plug connection and returns a fully JSONAPI Serialized document.
@@ -19,11 +17,12 @@ defmodule JSONAPI.Serializer do
   Please refer to `JSONAPI.View` for more information. If you are in interested in relationships
   and includes you may also want to reference the `JSONAPI.QueryParser`.
   """
-  @spec serialize(module(), term(), Plug.Conn.t() | nil, map() | nil, list()) :: serialized_doc()
+  @spec serialize(View.t(), View.data(), Conn.t() | nil, View.meta() | nil, View.options()) ::
+          document()
   def serialize(view, data, conn \\ nil, meta \\ nil, options \\ []) do
     {query_includes, query_page} =
       case conn do
-        %Plug.Conn{assigns: %{jsonapi_query: %Config{include: include, page: page}}} ->
+        %Conn{assigns: %{jsonapi_query: %Config{include: include, page: page}}} ->
           {include, page}
 
         _ ->
@@ -77,32 +76,29 @@ defmodule JSONAPI.Serializer do
     encode_relationships(conn, doc, {view, data, query_includes, valid_includes}, options)
   end
 
-  @spec encode_relationships(Plug.Conn.t(), serialized_doc(), tuple(), list()) :: tuple()
+  @spec encode_relationships(Conn.t(), document(), tuple(), list()) :: tuple()
   def encode_relationships(conn, doc, {view, data, _, _} = view_info, options) do
     view.relationships()
-    |> Enum.filter(&data_loaded?(Map.get(data, elem(&1, 0))))
+    |> Enum.filter(&data_loaded?(Map.get(data, get_data_key(&1))))
     |> Enum.map_reduce(doc, &build_relationships(conn, view_info, &1, &2, options))
   end
 
-  @spec build_relationships(Plug.Conn.t(), tuple(), tuple(), tuple(), list()) :: tuple()
+  defp get_data_key(rel_config), do: elem(extrapolate_relationship_config(rel_config), 1)
+
+  @spec build_relationships(Conn.t(), tuple(), term(), term(), module(), tuple(), list()) ::
+          tuple()
   def build_relationships(
         conn,
-        {view, data, query_includes, valid_includes},
-        {key, include_view},
+        {parent_view, parent_data, query_includes, valid_includes},
+        relationship_name,
+        rel_data,
+        rel_view,
         acc,
         options
       ) do
-    rel_view =
-      case include_view do
-        {view, :include} -> view
-        view -> view
-      end
-
-    rel_data = Map.get(data, key)
-
     # Build the relationship url
-    rel_key = transform_fields(key)
-    rel_url = view.url_for_rel(data, rel_key, conn)
+    rel_key = transform_fields(relationship_name)
+    rel_url = parent_view.url_for_rel(parent_data, rel_key, conn)
 
     # Build the relationship
     acc =
@@ -112,14 +108,14 @@ defmodule JSONAPI.Serializer do
         encode_relation({rel_view, rel_data, rel_url, conn})
       )
 
-    valid_include_view = include_view(valid_includes, key)
+    valid_include_view = include_view(valid_includes, relationship_name)
 
     if {rel_view, :include} == valid_include_view && data_loaded?(rel_data) do
       rel_query_includes =
         if is_list(query_includes) do
           query_includes
           |> Enum.reduce([], fn
-            {^key, value}, acc -> acc ++ [value]
+            {^relationship_name, value}, acc -> acc ++ [value]
             _, acc -> acc
           end)
           |> List.flatten()
@@ -136,6 +132,54 @@ defmodule JSONAPI.Serializer do
     end
   end
 
+  @spec build_relationships(Conn.t(), tuple(), tuple(), tuple(), list()) :: tuple()
+  def build_relationships(
+        conn,
+        {_parent_view, data, _query_includes, _valid_includes} = parent_info,
+        rel_config,
+        acc,
+        options
+      ) do
+    {rewrite_key, data_key, rel_view, _include} = extrapolate_relationship_config(rel_config)
+
+    rel_data = Map.get(data, data_key)
+
+    build_relationships(
+      conn,
+      parent_info,
+      rewrite_key,
+      rel_data,
+      rel_view,
+      acc,
+      options
+    )
+  end
+
+  @doc """
+  Given the relationship config entry provided by a JSONAPI.View, produce
+  the extrapolated config tuple containing:
+    - The name of the relationship to be used when serializing
+    - The key in the data the relationship is found under
+    - The relationship resource's JSONAPI.View module
+    - A boolean for whether the relationship is included by default or not
+  """
+  @spec extrapolate_relationship_config(tuple()) :: {atom(), atom(), module(), boolean()}
+  def extrapolate_relationship_config({rewrite_key, {data_key, view, :include}}) do
+    {rewrite_key, data_key, view, true}
+  end
+
+  def extrapolate_relationship_config({data_key, {view, :include}}) do
+    {data_key, data_key, view, true}
+  end
+
+  def extrapolate_relationship_config({rewrite_key, {data_key, view}}) do
+    {rewrite_key, data_key, view, false}
+  end
+
+  def extrapolate_relationship_config({data_key, view}) do
+    {data_key, data_key, view, false}
+  end
+
   defp include_view(valid_includes, key) when is_list(valid_includes) do
     valid_includes
     |> Keyword.get(key)
@@ -144,7 +188,9 @@ defmodule JSONAPI.Serializer do
 
   defp include_view(view, _key), do: generate_view_tuple(view)
 
+  defp generate_view_tuple({_rewrite_key, view, :include}), do: {view, :include}
   defp generate_view_tuple({view, :include}), do: {view, :include}
+  defp generate_view_tuple({_rewrite_key, view}), do: {view, :include}
   defp generate_view_tuple(view) when is_atom(view), do: {view, :include}
 
   @spec data_loaded?(map() | list()) :: boolean()
@@ -218,6 +264,10 @@ defmodule JSONAPI.Serializer do
     |> Enum.uniq()
   end
 
+  defp assoc_loaded?(nil), do: false
+  defp assoc_loaded?(%{__struct__: Ecto.Association.NotLoaded}), do: false
+  defp assoc_loaded?(_association), do: true
+
   defp get_includes(view, query_includes) do
     includes = get_default_includes(view) ++ get_query_includes(view, query_includes)
     Enum.uniq(includes)
@@ -226,10 +276,13 @@ defmodule JSONAPI.Serializer do
   defp get_default_includes(view) do
     rels = view.relationships()
 
-    Enum.filter(rels, fn
-      {_k, {_v, :include}} -> true
-      _ -> false
-    end)
+    Enum.filter(rels, &include_rel_by_default/1)
+  end
+
+  defp include_rel_by_default(rel_config) do
+    {_rel_key, _data_key, _view, include_by_default} = extrapolate_relationship_config(rel_config)
+
+    include_by_default
   end
 
   defp get_query_includes(view, query_includes) do
@@ -246,9 +299,9 @@ defmodule JSONAPI.Serializer do
   defp remove_links?, do: Application.get_env(:jsonapi, :remove_links, false)
 
   defp transform_fields(fields) do
-    case JString.field_transformation() do
-      :camelize -> JString.expand_fields(fields, &JString.camelize/1)
-      :dasherize -> JString.expand_fields(fields, &JString.dasherize/1)
+    case Utils.String.field_transformation() do
+      :camelize -> Utils.String.expand_fields(fields, &Utils.String.camelize/1)
+      :dasherize -> Utils.String.expand_fields(fields, &Utils.String.dasherize/1)
       _ -> fields
     end
   end

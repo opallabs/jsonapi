@@ -4,11 +4,11 @@ defmodule JSONAPI.Mixfile do
   def project do
     [
       app: :jsonapi,
-      version: "1.3.0",
+      version: "1.5.0",
       package: package(),
       compilers: compilers(Mix.env()),
       description: description(),
-      elixir: "~> 1.7",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -40,6 +40,7 @@ defmodule JSONAPI.Mixfile do
 
   defp dialyzer do
     [
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
       plt_add_deps: :app_tree
     ]
   end
@@ -52,7 +53,7 @@ defmodule JSONAPI.Mixfile do
       {:earmark, ">= 0.0.0", only: :dev},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:phoenix, "~> 1.3", only: :test},
-      {:dialyxir, "~> 1.0.0", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.3.0", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -63,10 +64,14 @@ defmodule JSONAPI.Mixfile do
         "Mitchell Henke",
         "Jake Robers",
         "Sean Callan",
-        "James Herdman"
+        "James Herdman",
+        "Mathew Polzin"
       ],
       licenses: ["MIT"],
-      links: %{github: "https://github.com/jeregrine/jsonapi", docs: "http://hexdocs.pm/jsonapi/"}
+      links: %{
+        github: "https://github.com/beam-community/jsonapi",
+        docs: "http://hexdocs.pm/jsonapi/"
+      }
     ]
   end
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.5.0 (2023-01-25)
+
+### What's Changed
+
+#### Improvements
+
+* Integration between UnderscoreParameters and QueryParser by @TylerPachal in https://github.com/beam-community/jsonapi/pull/282
+* Response body for content type error by @TylerPachal in https://github.com/beam-community/jsonapi/pull/276
+* Fix typos by @kianmeng in https://github.com/beam-community/jsonapi/pull/275
+* Add c:JSONAPI.View.get_field/3 by @whatyouhide in https://github.com/beam-community/jsonapi/pull/273
+* Support renaming of relationships by @mattpolzin in https://github.com/beam-community/jsonapi/pull/270
+
+### New Contributors
+
+* @kianmeng made their first contribution in https://github.com/beam-community/jsonapi/pull/275
+* @whatyouhide made their first contribution in https://github.com/beam-community/jsonapi/pull/273
+* @TylerPachal made their first contribution in https://github.com/beam-community/jsonapi/pull/276
+
+**Full Changelog**: https://github.com/beam-community/jsonapi/compare/1.4.0...v1.5.0
+
+## 1.4.0 (2022-11-05)
+
+**Full Changelog**: https://github.com/beam-community/jsonapi/compare/1.3.0...v1.4.0
+
 ## 1.3.0 (2020-03-21)
 
 ### Added
@@ -168,14 +192,14 @@ you have any trouble with these deprecations please file an issue.
 
 ## v0.5.1 (2017-07-07)
 
-- [Added](https://github.com/jeregrine/jsonapi/commit/1f9e45aee4058ca6b3a8a55aaec6eebcada525a6) plug to make verifying reqeusts and their errors easier
+- [Added](https://github.com/jeregrine/jsonapi/commit/1f9e45aee4058ca6b3a8a55aaec6eebcada525a6) plug to make verifying requests and their errors easier
 
 ## v0.5.0 (2017-07-07)
 
 - [Added](https://github.com/jeregrine/jsonapi/commit/def022b327ac13e5e906a665321969b442048f3b) support for meta fields
 - [Added](https://github.com/jeregrine/jsonapi/commit/1bbe4de86baec250d0b8dcc263bb41a94dea8063) support for custom hosts
 - [Added](https://github.com/jeregrine/jsonapi/commit/3c73e870651f09ce8e09d4061111487db2e515f5) support for hidden attributes in views
-- [Added](https://github.com/jeregrine/jsonapi/commit/45f0d14e9d700d32a8b20dc04a4fa300fa43da37) support converstion of underscore to dashes.
+- [Added](https://github.com/jeregrine/jsonapi/commit/45f0d14e9d700d32a8b20dc04a4fa300fa43da37) support conversion of underscore to dashes.
 - [Fixed](https://github.com/jeregrine/jsonapi/commit/74b0d1914a3aceb792c753f2292002c10ac93005) issue with index.json
 - Now uses Credo
 

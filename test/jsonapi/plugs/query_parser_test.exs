@@ -1,5 +1,7 @@
 defmodule JSONAPI.QueryParserTest do
   use ExUnit.Case
+  use Plug.Test
+
   import JSONAPI.QueryParser
   alias JSONAPI.Exceptions.InvalidQuery
   alias JSONAPI.Config
@@ -82,6 +84,8 @@ defmodule JSONAPI.QueryParserTest do
     assert parse_include(config, "comments,author").include == [:comments, :author]
     assert parse_include(config, "comments.user").include == [comments: :user]
     assert parse_include(config, "best_friends").include == [:best_friends]
+    assert parse_include(config, "author.top-posts").include == [author: :top_posts]
+    assert parse_include(config, "").include == []
   end
 
   test "parse_include/2 errors with invalid includes" do
@@ -99,11 +103,7 @@ defmodule JSONAPI.QueryParserTest do
       parse_include(config, "comments.author.user")
     end
 
-    assert_raise InvalidQuery, "invalid include, author.top-posts for type mytype", fn ->
-      assert parse_include(config, "author.top-posts")
-    end
-
-    assert_raise InvalidQuery, "invalid include, fake-rel for type mytype", fn ->
+    assert_raise InvalidQuery, "invalid include, fake_rel for type mytype", fn ->
       assert parse_include(config, "fake-rel")
     end
   end
@@ -121,6 +121,11 @@ defmodule JSONAPI.QueryParserTest do
   test "parse_fields/2 turns a fields map into a map of validated fields" do
     config = struct(Config, view: MyView)
     assert parse_fields(config, %{"mytype" => "id,text"}).fields == %{"mytype" => [:id, :text]}
+  end
+
+  test "parse_fields/2 turns an empty fields map into an empty list" do
+    config = struct(Config, view: MyView)
+    assert parse_fields(config, %{"mytype" => ""}).fields == %{"mytype" => []}
   end
 
   test "parse_fields/2 raises on invalid parsing" do
@@ -157,5 +162,24 @@ defmodule JSONAPI.QueryParserTest do
     assert_raise InvalidQuery, "invalid fields, cupcake for type mytype", fn ->
       get_view_for_type(MyView, "cupcake")
     end
+  end
+
+  test "integrates with UnderscoreParameters to filter dasherized fields" do
+    # The incoming request has a dasherized filter name
+    conn =
+      :get
+      |> conn("?filter[favorite-food]=pizza")
+      |> put_req_header("content-type", JSONAPI.mime_type())
+
+    # The filter in the controller is expecting an underscored filter name
+    config = struct(Config, view: MyView, opts: [filter: ["favorite_food"]])
+
+    conn =
+      conn
+      |> JSONAPI.UnderscoreParameters.call(replace_query_params: true)
+      |> JSONAPI.QueryParser.call(config)
+
+    # Ensure the underscored file name is present in the parsed filters
+    assert [favorite_food: _] = conn.assigns.jsonapi_query.filter
   end
 end
