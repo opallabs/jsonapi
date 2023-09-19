@@ -198,7 +198,7 @@ config :jsonapi,
   scheme: "https",
   namespace: "/api",
   field_transformation: :underscore,
-  remove_links: false,
+  add_auto_links: false,
   json_library: Jason,
   paginator: nil
 ```
@@ -216,8 +216,8 @@ config :jsonapi,
   `"favorite-color": blue`). If your API uses dashed fields, set this value to
   `:dasherize`. If your API uses underscores (e.g. `"favorite_color": "red"`)
   set to `:underscore`.
-- **remove_links**. `links` data can optionally be removed from the payload via
-  setting the configuration above to `true`. Defaults to `false`.
+- **add_auto_links**. `links` data can optionally be auto-added by
+  setting the configuration above to `true`. Defaults to `true`.
 - **json_library**. Defaults to [Jason](https://hex.pm/packages/jason).
 - **paginator**. Module implementing pagination links generation. Defaults to `nil`.
 
