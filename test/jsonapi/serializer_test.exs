@@ -759,15 +759,13 @@ defmodule JSONAPI.SerializerTest do
   test "serialize can include arbitrary, user-defined, links" do
     data = %{id: 1}
 
-    assert %{ data: resp,
-             links: links
-           } = Serializer.serialize(ExpensiveResourceView, data, nil)
+    assert %{data: resp, links: links} = Serializer.serialize(ExpensiveResourceView, data, nil)
 
-    assert %{ links: resource_links } = resp
+    assert %{links: resource_links} = resp
 
     assert links == %{
-      self: "/expensive-resource/#{data.id}",
-    }
+             self: "/expensive-resource/#{data.id}"
+           }
 
     expected_links = %{
       self: "/expensive-resource/#{data.id}",
